@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2015",
+    "module": "ESNext",
+    "declaration": true,
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "moduleResolution": "bundler", // Match Next.js
+    "sourceMap": true,
+    "lib": ["ESNext", "DOM"],
+    "rootDir": "src", // Ensure source files are correctly mapped
+    "emitDeclarationOnly": false, // Ensure JS files are emitted
+    "paths": {
+      "@/*": [
+        "*"
+      ]
+    },
+    "baseUrl": "./src",
+  },
+  "tsc-alias": {
+    "verbose": true,
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
