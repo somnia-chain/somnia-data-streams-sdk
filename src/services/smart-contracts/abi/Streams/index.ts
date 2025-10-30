@@ -65,7 +65,22 @@ export async function StreamsABI(): Promise<Abi> {
     },
     {
       "inputs": [],
+      "name": "InvalidIndex",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidRange",
+      "type": "error"
+    },
+    {
+      "inputs": [],
       "name": "InvalidSelfReference",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidSize",
       "type": "error"
     },
     {
@@ -133,6 +148,11 @@ export async function StreamsABI(): Promise<Abi> {
     {
       "inputs": [],
       "name": "Unauthorized",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroValue",
       "type": "error"
     },
     {
@@ -659,6 +679,30 @@ export async function StreamsABI(): Promise<Abi> {
           "internalType": "address",
           "name": "publisher",
           "type": "address"
+        }
+      ],
+      "name": "getLastPublishedDataForSchema",
+      "outputs": [
+        {
+          "internalType": "bytes",
+          "name": "",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "schemaId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "publisher",
+          "type": "address"
         },
         {
           "internalType": "uint256",
@@ -672,6 +716,40 @@ export async function StreamsABI(): Promise<Abi> {
           "internalType": "bytes",
           "name": "",
           "type": "bytes"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "schemaId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "publisher",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "start",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "end",
+          "type": "uint256"
+        }
+      ],
+      "name": "getPublisherDataForSchemaInRange",
+      "outputs": [
+        {
+          "internalType": "bytes[]",
+          "name": "",
+          "type": "bytes[]"
         }
       ],
       "stateMutability": "view",
@@ -904,6 +982,35 @@ export async function StreamsABI(): Promise<Abi> {
       "name": "publishDataAndEmitEvents",
       "outputs": [],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "schemaId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "publisher",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "key",
+          "type": "bytes32"
+        }
+      ],
+      "name": "publisherDataExists",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "exists",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {

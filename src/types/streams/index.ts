@@ -2,6 +2,7 @@ import {
     Hex,
     Address,
     webSocket,
+    Abi,
 } from "viem"
 import { SchemaDecodedItem } from "@/modules/streams/encoder"
 
@@ -130,6 +131,12 @@ export type SubscriptionCallback = {
   }
 }
 
+export type GetSomniaDataStreamsProtocolInfoResponse = {
+  address: string
+  abi: Abi
+  chainId: number
+}
+
 /**
  * @param somniaStreamsEventId The identifier of a registered event schema within Somnia streams protocol or null if using a custom event source
  * @param ethCalls Fixed set of ETH calls that must be executed before onData callback is triggered. Multicall3 is recommended. Can be an empty array
@@ -169,11 +176,42 @@ export interface StreamsInterface {
     // Read
     getByKey(schemaId: SchemaID, publisher: Address, key: Hex): Promise<Hex[] | SchemaDecodedItem[][] | null>;
     getAtIndex(schemaId: SchemaID, publisher: Address, idx: bigint): Promise<Hex[] | SchemaDecodedItem[][] | null>;
+    getBetweenRange(
+        schemaId: SchemaID,
+        publisher: Address,
+        startIndex: bigint,
+        endIndex: bigint
+    ): Promise<Hex[] | SchemaDecodedItem[][] | Error | null>;
+    getAllPublisherDataForSchema(
+        schemaReference: SchemaReference,
+        publisher: Address
+    ): Promise<Hex[] | SchemaDecodedItem[][] | null>;
+    getLastPublishedDataForSchema(
+        schemaId: SchemaID,
+        publisher: Address
+    ): Promise<Hex[] | SchemaDecodedItem[][] | null>;
     totalPublisherDataForSchema(schemaId: SchemaID, publisher: Address): Promise<bigint | null>;
     isDataSchemaRegistered(schemaId: SchemaID): Promise<boolean | null>;
     computeSchemaId(schema: string): Promise<Hex | null>;
     parentSchemaId(schemaId: SchemaID): Promise<Hex | null>;
+    schemaIdToId(schemaId: SchemaID): Promise<string | null>;
+    idToSchemaId(id: string): Promise<Hex | null>;
+    getAllSchemas(): Promise<string[] | null>;
+    getEventSchemasById(ids: string[]): Promise<EventSchema[] | null>;
+
+    // Helper
+    deserialiseRawData(
+        rawData: Hex[],
+        parentSchemaId: Hex,
+        schemaLookup: {
+            schema: string;
+            schemaId: Hex;
+        } | null
+    ): Promise<Hex[] | SchemaDecodedItem[][] | null>;
 
     // Subscribe
     subscribe(initParams: SubscriptionInitParams): Promise<{ subscriptionId: string, unsubscribe: () => void } | undefined>;
+
+    // Protocol
+    getSomniaDataStreamsProtocolInfo(): Promise<GetSomniaDataStreamsProtocolInfoResponse | Error | null>;
 }

@@ -26,6 +26,7 @@ import {
     ExtendedWebSocketTransport,
     StreamsInterface,
     SubscriptionInitParams,
+    GetSomniaDataStreamsProtocolInfoResponse,
 } from "@/types/streams"
 import { assertAddressIsValid } from "@/utils/validation"
 
@@ -305,6 +306,54 @@ export class Streams implements StreamsInterface {
     }
 
     /**
+     * Given knowledge re total data published under a schema for a publisher, get data in a specified range
+     * @param schemaId Unique hex reference to the schema (bytes32 value)
+     * @param publisher Address of the wallet or smart contract that published the data
+     * @param startIndex BigInt start of the range (inclusive)
+     * @param endIndex BigInt end of the range (exclusive)
+     * @returns Raw bytes array if the schema is private, decoded data array if schema is valid, error or null when something goes wrong
+     */
+    public async getBetweenRange(
+        schemaId: SchemaID,
+        publisher: Address,
+        startIndex: bigint,
+        endIndex: bigint
+    ): Promise<Hex[] | SchemaDecodedItem[][] | Error | null> {
+        // Ensure the publisher address is valid
+        assertAddressIsValid(publisher)
+
+        // Get data between range
+        try {
+            // Resolve the chain id
+            const chainId = await this.viem.getChainId()
+
+            // Fetch the required contract info
+            const { address, abi } = await getContractAddressAndAbi({
+                internal: KnownContracts.STREAMS,
+                chainId
+            })
+
+            // Read from chain with a single multicall call that avoids contractViewCalls.length rpc calls
+            const rawData = await this.viem.readContract<Hex[]>(
+                address,
+                abi,
+                "getPublisherDataForSchemaInRange",
+                [schemaId, publisher, startIndex, endIndex]
+            )
+
+            // Extract the raw data and ask the SDK to deserialise using the data schema specified
+            return this.deserialiseRawData(rawData, schemaId)
+        } catch (e) {
+            console.log("getBetweenRange failure", e)
+            maybeLogContractError(e, "getBetweenRange: Failed to get data")
+            if (e instanceof Error) {
+                return e
+            }
+        }
+        return null
+    }
+
+    /**
      * Read historical published data for a given schema at a known index
      * @param schemaId Unique schema reference that can be computed from the full schema
      * @param publisher Wallet that published the data
@@ -328,34 +377,14 @@ export class Streams implements StreamsInterface {
             })
 
             // Read from chain
-            let [rawData, parentSchemaId] = await Promise.all([
-                // Read the raw published data regardless
-                this.viem.readContract<Hex>(
-                    address,
-                    abi,
-                    "getPublisherDataForSchemaAtIndex",
-                    [schemaId, publisher, idx]
-                ),
-                // Check if there is a parent schema id associated with the schema
-                this.viem.readContract<Hex>(
-                    address,
-                    abi,
-                    "parentSchemaId",
-                    [schemaId]
-                ),
-            ])
-
-            // Do the schema lookup
-            const schemaLookup = await this.localAndOnchainSchemaLookup(
+            const rawData = await this.viem.readContract<Hex>(
                 address,
                 abi,
-                schemaId
+                "getPublisherDataForSchemaAtIndex",
+                [schemaId, publisher, idx]
             )
-            if (!schemaLookup) {
-                throw new Error(`Unable to do schema lookup on [${schemaId}]`)
-            }
 
-            return this.deserialiseRawData([rawData], parentSchemaId, schemaLookup)
+            return this.deserialiseRawData([rawData], schemaId)
         } catch (e) {
             console.error(e)
         }
@@ -544,13 +573,13 @@ export class Streams implements StreamsInterface {
     }
 
     /**
-     * Query Etherbase for all data published by a specific wallet for a given schema
+     * Query Somnia Data streams for all data published by a specific wallet for a given schema
      * @param schemaId Unique schema reference to a public or private schema or the full schema
      * @param publisher Wallet that broadcast the data on-chain
      * @returns A hex array with (raw data) for private schemas, SchemaDecodedItem 2D array for decoded data or null for errors reading from chain
      */
     public async getAllPublisherDataForSchema(
-        schemaReference: SchemaReference,
+        schemaId: SchemaID,
         publisher: Address
     ): Promise<Hex[] | SchemaDecodedItem[][] | null> {
         assertAddressIsValid(publisher)
@@ -564,35 +593,15 @@ export class Streams implements StreamsInterface {
                 chainId
             })
 
-            // Do the schema lookup
-            const schemaLookup = await this.localAndOnchainSchemaLookup(
+            // Read from chain
+            const rawData = await this.viem.readContract<Hex[]>(
                 address,
                 abi,
-                schemaReference
+                "getAllPublisherDataForSchema",
+                [schemaId, publisher]
             )
-            if (!schemaLookup) {
-                throw new Error(`Unable to do schema lookup on [${schemaReference}]`)
-            }
 
-            // Read from chain
-            let [rawData, parentSchemaId] = await Promise.all([
-                // Read the raw published data regardless
-                this.viem.readContract<Hex[]>(
-                    address,
-                    abi,
-                    "getAllPublisherDataForSchema",
-                    [schemaLookup.schemaId, publisher]
-                ),
-                // Check if there is a parent schema id associated with the schema
-                this.viem.readContract<Hex>(
-                    address,
-                    abi,
-                    "parentSchemaId",
-                    [schemaLookup.schemaId]
-                ),
-            ])
-
-            return this.deserialiseRawData(rawData, parentSchemaId, schemaLookup)
+            return this.deserialiseRawData(rawData, schemaId)
         } catch (e) {
             console.error(e)
         }
@@ -665,6 +674,73 @@ export class Streams implements StreamsInterface {
             )
         } catch (e) {
             console.log(e)
+        }
+        return null
+    }
+
+    /**
+     * If there published data for a given schema, this returns the last published data
+     * @dev this assumes that last published data is at the end of the array of all publisher data points
+     * @param schemaId Unique schema identifier
+     * @param publisher Wallet address of the publisher 
+     * @returns Raw data from chain if schema is not public, decoded data if it is or null if there were errors reading data
+     */
+    public async getLastPublishedDataForSchema(
+        schemaId: SchemaID,
+        publisher: Address
+    ): Promise<Hex[] | SchemaDecodedItem[][] | null> {
+        try {
+            // Resolve the chain id
+            const chainId = await this.viem.getChainId()
+
+            // Fetch the required contract info
+            const { address, abi } = await getContractAddressAndAbi({
+                internal: KnownContracts.STREAMS,
+                chainId
+            })
+
+            // Read the last published bytes data from chain
+            const rawData = await this.viem.readContract<Hex>(
+                address,
+                abi,
+                "getLastPublishedDataForSchema",
+                [schemaId, publisher]
+            )
+
+            return this.deserialiseRawData([rawData], schemaId)
+        } catch (e) {
+            console.log(e)
+        }
+        return null
+    }
+
+    /**
+     * Based on the connected viem public client, will return the address, abi and connected chain id
+     * @returns Protocol info if there is one defined for the target chain, an error if that was not possible or null in a catch all error scenario
+     */
+    public async getSomniaDataStreamsProtocolInfo(): Promise<
+        GetSomniaDataStreamsProtocolInfoResponse | Error | null
+    > {
+        try {
+            // Resolve the chain id
+            const chainId = await this.viem.getChainId()
+
+            // Fetch the required contract info
+            const { address, abi } = await getContractAddressAndAbi({
+                internal: KnownContracts.STREAMS,
+                chainId
+            })
+
+            return {
+                address,
+                abi,
+                chainId
+            }
+        } catch (e) {
+            console.log(e)
+            if (e instanceof Error) {
+                return e
+            }
         }
         return null
     }
@@ -763,61 +839,17 @@ export class Streams implements StreamsInterface {
         }
     }
 
-    private async localAndOnchainSchemaLookup(
-        contract: Address,
-        abi: Abi,
-        schemaRef: SchemaReference
-    ): Promise<{
-        schema: string,
-        schemaId: Hex
-    } | null> {
-        if (typeof schemaRef === "string"
-                && schemaRef.indexOf("0x") === -1
-                && schemaRef.indexOf("0X") === -1
-            ) {
-            // we dont need to do an onchain schema id -> schema look up as we already have the schema
-            // but we should still compute the schema Id
-            const schemaId = await this.computeSchemaId(schemaRef)
-            if (!schemaId) {
-                return null
-            }
-
-            return {
-                schema: schemaRef,
-                schemaId
-            }
-        }
-
-        // Request info from the chain to see if the schema is public
-        const schemaId = schemaRef as Hex
-        const maybeSchema = await this.viem.readContract<string>(
-            contract,
-            abi,
-            "schemaReverseLookup",
-            [schemaId]
-        )
-
-        return {
-            schema: maybeSchema,
-            schemaId
-        }
-    }
-
-    private async deserialiseRawData(
+    /**
+     * From raw bytes data, deserialise the raw data based on a given public schema
+     * @param rawData The array of data that will be deserialised based on the specified schema
+     * @param schemaId The bytes32 schema identifier used to lookup the schema that is needed for deserialisation
+     * @returns The raw data if the schema is public, the decoded items for each item of raw data or null if there was an issue (catch all)
+     */
+    public async deserialiseRawData(
         rawData: Hex[],
-        parentSchemaId: Hex,
-        schemaLookup: {
-            schema: string;
-            schemaId: Hex;
-        } | null
+        schemaId: SchemaID
     ): Promise<Hex[] | SchemaDecodedItem[][] | null> {
-        let parentSchema: string | null = null
         try {
-            // Return early if the schema lookup 
-            if (!schemaLookup) {
-                throw new Error(`Invalid schema lookup`)
-            }
-
             // Resolve the chain id
             const chainId = await this.viem.getChainId()
 
@@ -827,23 +859,9 @@ export class Streams implements StreamsInterface {
                 chainId
             })
 
-            if (parentSchemaId !== zeroBytes32) {
-                // TODO - this is only handling depth of 1 we need to handle more
-                parentSchema = await this.viem.readContract<string>(
-                    address,
-                    abi,
-                    "schemaReverseLookup",
-                    [parentSchemaId]
-                )
-                console.log("Parent schema is associated with the schema", { parentSchema })
-            }
-
-            if (schemaLookup.schema && schemaLookup.schema.length > 0) {
-                let finalSchema = schemaLookup.schema
-                if (parentSchema) {
-                    finalSchema = `${finalSchema}, ${parentSchema}`
-                }
-
+            const schemaLookup = await this.schemaLookup(address, abi, schemaId)
+            let finalSchema = schemaLookup?.finalSchema
+            if (finalSchema) {
                 const encoder = new SchemaEncoder(finalSchema)
                 const decodedData = rawData.map((raw: Hex) => (encoder.decodeData(raw)))
                 return decodedData
@@ -856,4 +874,129 @@ export class Streams implements StreamsInterface {
         }
         return null
     }
+
+    /**
+     * Request a schema given the schema id used for data publishing and let the SDK take care of schema extensions
+     * @param schemaId The bytes32 unique identifier for a base schema
+     * @returns Schema info if it is public, Error or null if there is a problem retrieving schema ID
+     */
+    public async getSchemaFromSchemaId(
+        schemaId: SchemaID
+    ): Promise<{
+        baseSchema: string
+        finalSchema: string
+        schemaId: Hex
+    } | Error | null> {
+        try {
+            // Resolve the connected chain id
+            const chainId = await this.viem.getChainId()
+
+            // Fetch the required contract info
+            const { address, abi } = await getContractAddressAndAbi({
+                internal: KnownContracts.STREAMS,
+                chainId
+            })
+
+            // Do the base schema lookup and check if the schema has extended other schemas
+            const schemaLookup = await this.schemaLookup(
+                address,
+                abi,
+                schemaId
+            )
+            if (!schemaLookup) {
+                throw new Error(`Unable to do schema lookup on [${schemaId}]`)
+            }
+
+            return schemaLookup
+        } catch (e) {
+            console.log(e)
+            if (e instanceof Error) {
+                return e
+            }
+        }
+        return null
+    }
+
+    private async schemaLookup(
+        contract: Address,
+        abi: Abi,
+        schemaRef: SchemaReference
+    ): Promise<{
+        baseSchema: string
+        finalSchema: string
+        schemaId: Hex
+    } | null> {
+        // Ensure there is some data to process
+        if (schemaRef.length === 0 || schemaRef.trim().length === 0) {
+            throw new Error("Invalid schema or schema ID (zero data)")
+        }
+
+        // Lets resolve the schema ID
+        // We either have the raw base schema (without the parent schema(s)) or direct schema Id for the base
+        let schemaId: Hex | null = null
+        let lookupSchemaOnchain = true
+        if (schemaRef.indexOf("0x") === -1 && schemaRef.indexOf("0X") === -1) {
+            // we dont need to do an onchain schema id -> schema look up as we already have the schema
+            // but we should still compute the schema Id
+            schemaId = await this.computeSchemaId(schemaRef)
+            if (!schemaId) {
+                return null
+            }
+
+            // no need to look the schema up on-chain since we have it
+            lookupSchemaOnchain = false
+        } else {
+            schemaId = schemaRef as Hex
+        }
+
+        // Request info from the chain to see 
+        // 1. if the schema is public
+        // 2. if there is a parent schema associated
+        const [baseSchemaLookup, parentSchemaId] = await Promise.all([
+            lookupSchemaOnchain ? this.viem.readContract<string>(
+                contract,
+                abi,
+                "schemaReverseLookup",
+                [schemaId]
+            ) : Promise.resolve(schemaRef),
+            this.viem.readContract<Hex>(
+                contract,
+                abi,
+                "parentSchemaId",
+                [schemaId]
+            ),
+        ])
+
+        // Lookup parent schema if the base schema has extended another
+        let parentSchema: string | null = null
+        if (parentSchemaId !== zeroBytes32) {
+            // TODO - this is only handling depth of 1 we need to handle more
+            parentSchema = await this.viem.readContract<string>(
+                contract,
+                abi,
+                "schemaReverseLookup",
+                [parentSchemaId]
+            )
+            console.log("Parent schema is associated with the schema", { parentSchema })
+        }
+
+        // Compute the final schema factoring in any parent schemas
+        let finalSchema = baseSchemaLookup
+        if (parentSchema) {
+            finalSchema = `${finalSchema}, ${parentSchema}`
+        }
+
+        if (finalSchema.length === 0) {
+            console.warn("Unable to compute final schema")
+            return null
+        }
+
+        // Return the info to be consumed internally and externally
+        return {
+            baseSchema: baseSchemaLookup,
+            finalSchema,
+            schemaId
+        }
+    }
+
 }
