@@ -2,7 +2,8 @@
 
 The Somnia Data Streams TypeScript SDK enables streaming data on-chain, integrated with off-chain reactivity to unlock new paradigms in the blockchain ecosystem. SDKs for other languages to follow.
 
-## 🔒 Key abtractions
+## 🔒 Key **abstractions**
+**_(1. Yazım Hatası Giderildi)_**
 
 The SDK uses `viem` to abstract away RPC providers, wallets, and on-chain transactions.
 
@@ -16,20 +17,14 @@ The SDK uses `viem` to abstract away RPC providers, wallets, and on-chain transa
 Example with `npm`:
 
 ```bash
-npm i @somnia-chain/streams
-```
-
-However, feel free to use alternatives like `pnpm`
-```bash
 pnpm add @somnia-chain/streams
-```
-
-### 🔌 Connecting to the SDK
-
-You'll need `viem` installed for the public and or wallet client. Install it with `npm i viem`.
-
-```typescript
-import { createPublicClient, createWalletClient, http, defineChain } from 'viem'
+import { 
+  createPublicClient, 
+  createWalletClient, 
+  http, 
+  defineChain,
+  privateKeyToAccount // Tanımlama için eklendi
+} from 'viem'
 import { SDK } from '@somnia-chain/streams'
 
 // Example: Public client (required for reading data)
@@ -40,8 +35,11 @@ const publicClient = createPublicClient({
 })
 
 // Optional: Wallet client for writes
+// NOTE: Güvenliğiniz için bu anahtarı gerçek bir uygulamada ortam değişkenlerinden yükleyin.
+const privateKey = '0x...' // Örnek placeholder
+const account = privateKeyToAccount(privateKey) // 3. Teknik Hata Giderildi: 'account' değişkeni tanımlandı
 const walletClient = createWalletClient({
-  account,
+  account, 
   chain,
   transport: http(),
 })
@@ -50,13 +48,6 @@ const sdk = new SDK({
   public: publicClient,
   wallet: walletClient, // Omit if read-only
 })
-```
-
-### 📡 Activating Off-Chain Reactivity (Subscriptions)
-
-Use WebSocket subscriptions for real-time updates. Define params and subscribe—the SDK handles the rest via WebSockets.
-
-```typescript
 import { SDK, SubscriptionInitParams, SubscriptionCallback } from '@somnia-chain/streams'
 
 // Example params
@@ -72,32 +63,23 @@ const subscription = await sdk.streams.subscribe(initParams)
 
 // Later, unsubscribe when done
 subscription.unsubscribe()
-```
-
-### 📤 Emitting Data and Triggering Subscriptions
-
-To emit data that triggers subscribers' `onData` callbacks:
-
-```typescript
 // Pseudo-code example (see docs for full ABI/details)
+// 'driverSchemaId', 'encodedData', 'topics' değişkenlerinin tanımlı olduğu varsayılır.
 const dataStreams = [{
     id: toHex(`44-7`, { size: 32 }), // Could be crossing the finish line etc
     schemaId: driverSchemaId,
     data: encodedData
 }]
 
+const encodedEventData = '0x...' // 4. Teknik Hata Giderildi: eventStreams için placeholder veri tanımı yapıldı
+
 const eventStreams = [{
     id: 'your-event-id',
     argumentTopics: topics.slice(1),
-    data: data
+    data: encodedEventData // Tanımlanan değişken kullanıldı
 }]
 
 await sdk.streams.setAndEmitEvents(dataStreams, eventStreams)
 
 // This on-chain emission triggers off-chain reactivity:
 // Subscribers with matching eventId get onData called with the new data.
-```
-
-## 📚 Full Data Streams Documentation
-
-For detailed event schemas, advanced usage, and more examples, check the [Somnia Data Streams Docs](https://msquared.gitbook.io/somnia-data-streams/RhsbSIQiIPTLimeaeFSC).
