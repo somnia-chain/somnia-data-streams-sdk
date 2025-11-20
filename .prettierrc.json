@@ -2,5 +2,17 @@
   "printWidth": 100,
   "tabWidth": 2,
   "singleQuote": true,
-  "trailingComma": "es5"
+  
+  // 🚀 UPGRADE: Changed from 'es5' to 'all'.
+  // 'all' is the default in Prettier v3 and ensures cleaner git diffs 
+  // by adding trailing commas to function arguments as well.
+  "trailingComma": "all",
+
+  // 🛡️ SAFETY: Enforce Linux-style line endings.
+  // This prevents massive formatting diffs caused by Windows (CRLF) vs Mac/Linux (LF) inconsistencies.
+  "endOfLine": "lf",
+
+  // 👁️ CLARITY: Explicitly define usage of semicolons.
+  // While 'true' is default, explicit configuration leaves no room for ambiguity.
+  "semi": true
 }
