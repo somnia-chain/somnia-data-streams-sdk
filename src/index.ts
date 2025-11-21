@@ -9,7 +9,7 @@ export { zeroBytes32 } from "@/constants"
 export { SchemaEncoder } from "@/modules"
 export { SubscriptionCallback, SubscriptionInitParams } from "@/types/streams"
 
-export class SDK {
+export class SDK extends Streams {
     // Public modules that can be accessed on the SDK instance
     streams: Streams
 
@@ -18,6 +18,7 @@ export class SDK {
      * @param client Viem wrapper object for consuming the public client and optionally the wallet client for transactions
      */
     constructor(client: Client) {
+        super(client)
         this.streams = new Streams(client)
     }
 

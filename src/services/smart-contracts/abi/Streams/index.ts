@@ -30,11 +30,6 @@ export async function StreamsABI(): Promise<Abi> {
     },
     {
       "inputs": [],
-      "name": "IDAlreadyUsed",
-      "type": "error"
-    },
-    {
-      "inputs": [],
       "name": "IdentityAlreadyExists",
       "type": "error"
     },
@@ -46,11 +41,6 @@ export async function StreamsABI(): Promise<Abi> {
     {
       "inputs": [],
       "name": "IncorrectNumberOfTopics",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "InvalidArrayLength",
       "type": "error"
     },
     {
@@ -85,7 +75,17 @@ export async function StreamsABI(): Promise<Abi> {
     },
     {
       "inputs": [],
+      "name": "InvalidTopic",
+      "type": "error"
+    },
+    {
+      "inputs": [],
       "name": "MaxArrayLengthExceeded",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NameAlreadyUsed",
       "type": "error"
     },
     {
@@ -163,12 +163,19 @@ export async function StreamsABI(): Promise<Abi> {
           "internalType": "bytes32",
           "name": "schemaId",
           "type": "bytes32"
-        },
+        }
+      ],
+      "name": "DataSchemaRegistered",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
         {
           "indexed": true,
-          "internalType": "address",
-          "name": "publisher",
-          "type": "address"
+          "internalType": "bytes32",
+          "name": "schemaId",
+          "type": "bytes32"
         },
         {
           "indexed": true,
@@ -210,6 +217,25 @@ export async function StreamsABI(): Promise<Abi> {
       "inputs": [
         {
           "indexed": true,
+          "internalType": "bytes32",
+          "name": "eventTopic",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "id",
+          "type": "string"
+        }
+      ],
+      "name": "EventSchemaRegistered",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
           "internalType": "address",
           "name": "wallet",
           "type": "address"
@@ -229,6 +255,25 @@ export async function StreamsABI(): Promise<Abi> {
         }
       ],
       "name": "IdentityDeleted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "eventTopic",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "isOpen",
+          "type": "bool"
+        }
+      ],
+      "name": "IsEventEmissionOpen",
       "type": "event"
     },
     {
@@ -318,38 +363,6 @@ export async function StreamsABI(): Promise<Abi> {
         }
       ],
       "name": "RoleRevoked",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "bytes32",
-          "name": "schemaId",
-          "type": "bytes32"
-        }
-      ],
-      "name": "SchemaRegistered",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "bytes32",
-          "name": "eventTopic",
-          "type": "bytes32"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "id",
-          "type": "string"
-        }
-      ],
-      "name": "SchemaRegistered",
       "type": "event"
     },
     {
@@ -818,25 +831,6 @@ export async function StreamsABI(): Promise<Abi> {
     {
       "inputs": [
         {
-          "internalType": "string",
-          "name": "id",
-          "type": "string"
-        }
-      ],
-      "name": "idToSchemaId",
-      "outputs": [
-        {
-          "internalType": "bytes32",
-          "name": "schemaId",
-          "type": "bytes32"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
           "internalType": "bytes32",
           "name": "topic",
           "type": "bytes32"
@@ -852,6 +846,25 @@ export async function StreamsABI(): Promise<Abi> {
         {
           "internalType": "bool",
           "name": "isEmitter",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "topic",
+          "type": "bytes32"
+        }
+      ],
+      "name": "isEventEmissionOpen",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "isOpen",
           "type": "bool"
         }
       ],
@@ -898,6 +911,25 @@ export async function StreamsABI(): Promise<Abi> {
       "name": "manageEventEmitter",
       "outputs": [],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "name": "nameToSchemaId",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "schemaId",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {
@@ -1006,7 +1038,7 @@ export async function StreamsABI(): Promise<Abi> {
       "outputs": [
         {
           "internalType": "bool",
-          "name": "exists",
+          "name": "",
           "type": "bool"
         }
       ],
@@ -1035,7 +1067,7 @@ export async function StreamsABI(): Promise<Abi> {
       "outputs": [
         {
           "internalType": "uint256",
-          "name": "index",
+          "name": "indexPlusOne",
           "type": "uint256"
         }
       ],
@@ -1045,42 +1077,49 @@ export async function StreamsABI(): Promise<Abi> {
     {
       "inputs": [
         {
-          "internalType": "string[]",
-          "name": "ids",
-          "type": "string[]"
-        },
-        {
           "components": [
+            {
+              "internalType": "string",
+              "name": "id",
+              "type": "string"
+            },
             {
               "components": [
                 {
-                  "internalType": "string",
-                  "name": "name",
-                  "type": "string"
+                  "components": [
+                    {
+                      "internalType": "string",
+                      "name": "name",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "string",
+                      "name": "paramType",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "bool",
+                      "name": "isIndexed",
+                      "type": "bool"
+                    }
+                  ],
+                  "internalType": "struct EventSource.Parameter[]",
+                  "name": "params",
+                  "type": "tuple[]"
                 },
                 {
-                  "internalType": "string",
-                  "name": "paramType",
-                  "type": "string"
-                },
-                {
-                  "internalType": "bool",
-                  "name": "isIndexed",
-                  "type": "bool"
+                  "internalType": "bytes32",
+                  "name": "eventTopic",
+                  "type": "bytes32"
                 }
               ],
-              "internalType": "struct EventSource.Parameter[]",
-              "name": "params",
-              "type": "tuple[]"
-            },
-            {
-              "internalType": "bytes32",
-              "name": "eventTopic",
-              "type": "bytes32"
+              "internalType": "struct EventSource.EventSchema",
+              "name": "schema",
+              "type": "tuple"
             }
           ],
-          "internalType": "struct EventSource.EventSchema[]",
-          "name": "schemas",
+          "internalType": "struct EventSource.EventSchemaRegistration[]",
+          "name": "registrations",
           "type": "tuple[]"
         }
       ],
@@ -1095,7 +1134,7 @@ export async function StreamsABI(): Promise<Abi> {
           "components": [
             {
               "internalType": "string",
-              "name": "id",
+              "name": "schemaName",
               "type": "string"
             },
             {
@@ -1152,11 +1191,11 @@ export async function StreamsABI(): Promise<Abi> {
           "type": "bytes32"
         }
       ],
-      "name": "schemaIdToId",
+      "name": "schemaIdToName",
       "outputs": [
         {
           "internalType": "string",
-          "name": "id",
+          "name": "name",
           "type": "string"
         }
       ],
@@ -1191,6 +1230,24 @@ export async function StreamsABI(): Promise<Abi> {
         }
       ],
       "name": "setBypassRoleChecks",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "internalType": "bool",
+          "name": "isOpen",
+          "type": "bool"
+        }
+      ],
+      "name": "setIsEventEmissionOpen",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"

@@ -14,7 +14,7 @@ import {
 const STREAMS_LIBRARY_BY_CHAIN: ContractAddressByChain = {
     [Chains.SomniaMainnet]: zeroAddress,
     [Chains.SomniaTestnet]: getAddress(
-        "0x6AB397FF662e42312c003175DCD76EfF69D048Fc"
+        "0xC1d833a80469854a7450Dd187224b2ceE5ecE264"
     ),
 }
 
