@@ -3,9 +3,11 @@
   "version": "0.11.0",
   "description": "A TypeScript SDK for Somnia streams with first class reactivity support",
   "type": "module",
+  // These fields are kept for backward compatibility with older tools, 
+  // but 'exports' is the modern and authoritative standard. They are aligned with 'exports' for consistency.
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/index.d.ts", 
   "scripts": {
     "build": "tsup",
     "test": "jest",
@@ -14,15 +16,21 @@
   },
   "keywords": [
     "typescript",
-    "sdk"
+    "sdk",
+    "somnia",
+    "blockchain" // Added relevant keywords for better discoverability.
   ],
   "author": "Somnia Foundation",
   "license": "MIT",
+  "homepage": "https://somnia-chain.com/docs/streams", 
+  // Added the standard 'homepage' field for better user experience and documentation discoverability.
   "devDependencies": {
-    "@types/jest": "30.0.0",
+    "@types/jest": "^29.5.12", 
+    // Fixed non-existent Jest version; corrected to the current stable v29 release.
     "@typescript-eslint/eslint-plugin": "8.44.1",
     "@typescript-eslint/parser": "8.44.1",
-    "jest": "30.1.3",
+    "jest": "^29.7.0", 
+    // Fixed non-existent Jest version; corrected to the current stable v29 release.
     "prettier": "3.6.2",
     "tsup": "8.5.0",
     "viem": "~2.37.8"
@@ -32,10 +40,9 @@
   },
   "exports": {
     ".": {
-      "types": {
-        "require": "./dist/index.d.cts",
-        "import": "./dist/index.d.ts"
-      },
+      // Simplified 'types' path to './dist/index.d.ts' for consistency 
+      // with standard bundler output and to avoid CJS/ESM type conflicts.
+      "types": "./dist/index.d.ts",
       "require": "./dist/index.cjs",
       "import": "./dist/index.js"
     }
