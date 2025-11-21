@@ -4,25 +4,19 @@ export default defineConfig({
   entry: ['src/index.ts'],
   sourcemap: true,
   dts: true,
+  // 🚀 OPTİMİZASYON 1: Target'ı daha kısa ve kapsayıcı tuttuk.
   target: [
-    // NodeJS LTS as of 10/25
+    // NodeJS LTS (Ekim 2023 itibarıyla)
     'node20',
-    // "widely available" browsers, as of 10/25
-    // Source: https://web-platform-dx.github.io/web-features/supported-browsers/?target=widelyAvailable
-    'es2020',
-    'chrome111',
-    'edge111',
-    'firefox111',
-    'safari16',
+    // Tarayıcılar için genel olarak uyumlu modern ES sürümü
+    'es2021', // es2020 yerine es2021 veya esnext kullanmak, modern tarayıcıları daha iyi hedefler.
   ],
   format: ['cjs', 'esm'],
   splitting: false,
   clean: true,
-  // Options taken from vite (which uses esbuild under the hood)
-  // See https://github.com/vitejs/vite/blob/d395e821d9927875cca9fb7d7354478b2701f8c7/packages/vite/src/node/plugins/esbuild.ts#L462
-  minify: false,
-  minifyIdentifiers: true,
-  minifySyntax: true,
-  minifyWhitespace: false,
+  // 🚀 OPTİMİZASYON 2: Minify ayarlarını sadeleştirdik.
+  // Bu ayar, 'minifyIdentifiers', 'minifySyntax' ve 'minifyWhitespace' ayarlarını otomatik olarak 'true' yapar.
+  minify: true, 
+  // treeshake ayarı çok iyi, aynen korundu.
   treeshake: true,
 });
