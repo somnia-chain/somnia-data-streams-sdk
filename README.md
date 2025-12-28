@@ -2,7 +2,7 @@
 
 The Somnia Data Streams TypeScript SDK enables streaming data on-chain, integrated with off-chain reactivity to unlock new paradigms in the blockchain ecosystem. SDKs for other languages to follow.
 
-## 🔒 Key abtractions
+## 🔒 Key abstractions
 
 The SDK uses `viem` to abstract away RPC providers, wallets, and on-chain transactions.
 
@@ -26,7 +26,7 @@ pnpm add @somnia-chain/streams
 
 ### 🔌 Connecting to the SDK
 
-You'll need `viem` installed for the public and or wallet client. Install it with `npm i viem`.
+You'll need `viem` installed for the public and/or wallet client. Install it with `npm i viem`.
 
 ```typescript
 import { createPublicClient, createWalletClient, http, defineChain } from 'viem'
