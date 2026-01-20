@@ -3,15 +3,36 @@ import { Abi } from "viem"
 export async function StreamsABI(): Promise<Abi> {
     return [
     {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
       "inputs": [
         {
           "internalType": "address",
-          "name": "initialOwner",
+          "name": "target",
           "type": "address"
         }
       ],
-      "stateMutability": "nonpayable",
-      "type": "constructor"
+      "name": "AddressEmptyCode",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "implementation",
+          "type": "address"
+        }
+      ],
+      "name": "ERC1967InvalidImplementation",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ERC1967NonPayable",
+      "type": "error"
     },
     {
       "inputs": [],
@@ -30,12 +51,7 @@ export async function StreamsABI(): Promise<Abi> {
     },
     {
       "inputs": [],
-      "name": "IdentityAlreadyExists",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "IdentityDoesNotExist",
+      "name": "FailedCall",
       "type": "error"
     },
     {
@@ -50,12 +66,12 @@ export async function StreamsABI(): Promise<Abi> {
     },
     {
       "inputs": [],
-      "name": "InvalidIdentity",
+      "name": "InvalidIndex",
       "type": "error"
     },
     {
       "inputs": [],
-      "name": "InvalidIndex",
+      "name": "InvalidInitialization",
       "type": "error"
     },
     {
@@ -96,6 +112,11 @@ export async function StreamsABI(): Promise<Abi> {
     {
       "inputs": [],
       "name": "NoData",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotInitializing",
       "type": "error"
     },
     {
@@ -147,6 +168,22 @@ export async function StreamsABI(): Promise<Abi> {
     },
     {
       "inputs": [],
+      "name": "UUPSUnauthorizedCallContext",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "slot",
+          "type": "bytes32"
+        }
+      ],
+      "name": "UUPSUnsupportedProxiableUUID",
+      "type": "error"
+    },
+    {
+      "inputs": [],
       "name": "Unauthorized",
       "type": "error"
     },
@@ -163,6 +200,12 @@ export async function StreamsABI(): Promise<Abi> {
           "internalType": "bytes32",
           "name": "schemaId",
           "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "publisher",
+          "type": "address"
         }
       ],
       "name": "DataSchemaRegistered",
@@ -182,6 +225,12 @@ export async function StreamsABI(): Promise<Abi> {
           "internalType": "bytes32",
           "name": "dataId",
           "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "publisher",
+          "type": "address"
         }
       ],
       "name": "ESStoreEvent",
@@ -235,26 +284,13 @@ export async function StreamsABI(): Promise<Abi> {
       "anonymous": false,
       "inputs": [
         {
-          "indexed": true,
-          "internalType": "address",
-          "name": "wallet",
-          "type": "address"
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "version",
+          "type": "uint64"
         }
       ],
-      "name": "IdentityCreated",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "wallet",
-          "type": "address"
-        }
-      ],
-      "name": "IdentityDeleted",
+      "name": "Initialized",
       "type": "event"
     },
     {
@@ -280,25 +316,6 @@ export async function StreamsABI(): Promise<Abi> {
       "anonymous": false,
       "inputs": [
         {
-          "indexed": false,
-          "internalType": "enum RoleControl.Role",
-          "name": "role",
-          "type": "uint8"
-        },
-        {
-          "indexed": false,
-          "internalType": "bool",
-          "name": "isOpen",
-          "type": "bool"
-        }
-      ],
-      "name": "IsRoleOpenSet",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
           "indexed": true,
           "internalType": "address",
           "name": "previousOwner",
@@ -318,51 +335,13 @@ export async function StreamsABI(): Promise<Abi> {
       "anonymous": false,
       "inputs": [
         {
-          "indexed": false,
-          "internalType": "bool",
-          "name": "bypassed",
-          "type": "bool"
-        }
-      ],
-      "name": "RoleChecksBypassToggled",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
           "indexed": true,
           "internalType": "address",
-          "name": "wallet",
+          "name": "implementation",
           "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "enum RoleControl.Role",
-          "name": "role",
-          "type": "uint8"
         }
       ],
-      "name": "RoleGranted",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "wallet",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "enum RoleControl.Role",
-          "name": "role",
-          "type": "uint8"
-        }
-      ],
-      "name": "RoleRevoked",
+      "name": "Upgraded",
       "type": "event"
     },
     {
@@ -380,12 +359,12 @@ export async function StreamsABI(): Promise<Abi> {
     },
     {
       "inputs": [],
-      "name": "bypassRoleChecks",
+      "name": "UPGRADE_INTERFACE_VERSION",
       "outputs": [
         {
-          "internalType": "bool",
+          "internalType": "string",
           "name": "",
-          "type": "bool"
+          "type": "string"
         }
       ],
       "stateMutability": "view",
@@ -413,37 +392,6 @@ export async function StreamsABI(): Promise<Abi> {
     {
       "inputs": [
         {
-          "internalType": "address",
-          "name": "walletAddress",
-          "type": "address"
-        },
-        {
-          "internalType": "enum RoleControl.Role[]",
-          "name": "initialRoles",
-          "type": "uint8[]"
-        }
-      ],
-      "name": "createWalletIdentity",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "wallet",
-          "type": "address"
-        }
-      ],
-      "name": "deleteIdentity",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
           "components": [
             {
               "internalType": "string",
@@ -461,7 +409,7 @@ export async function StreamsABI(): Promise<Abi> {
               "type": "bytes"
             }
           ],
-          "internalType": "struct EventSource.EventData[]",
+          "internalType": "struct IEventSource.EventData[]",
           "name": "events",
           "type": "tuple[]"
         }
@@ -497,7 +445,7 @@ export async function StreamsABI(): Promise<Abi> {
               "type": "bytes"
             }
           ],
-          "internalType": "struct DataSchemaLibrary.DataStream[]",
+          "internalType": "struct IDataSchemaLibrary.DataStream[]",
           "name": "dataStreams",
           "type": "tuple[]"
         }
@@ -519,33 +467,8 @@ export async function StreamsABI(): Promise<Abi> {
       "outputs": [
         {
           "internalType": "string",
-          "name": "id",
-          "type": "string"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getAllIdentities",
-      "outputs": [
-        {
-          "components": [
-            {
-              "internalType": "address",
-              "name": "walletAddress",
-              "type": "address"
-            },
-            {
-              "internalType": "enum RoleControl.Role[]",
-              "name": "roles",
-              "type": "uint8[]"
-            }
-          ],
-          "internalType": "struct RoleControl.IdentityView[]",
           "name": "",
-          "type": "tuple[]"
+          "type": "string"
         }
       ],
       "stateMutability": "view",
@@ -602,19 +525,6 @@ export async function StreamsABI(): Promise<Abi> {
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "getAllWallets",
-      "outputs": [
-        {
-          "internalType": "address[]",
-          "name": "",
-          "type": "address[]"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
       "inputs": [
         {
           "internalType": "uint256",
@@ -663,7 +573,7 @@ export async function StreamsABI(): Promise<Abi> {
                   "type": "bool"
                 }
               ],
-              "internalType": "struct EventSource.Parameter[]",
+              "internalType": "struct IEventSource.Parameter[]",
               "name": "params",
               "type": "tuple[]"
             },
@@ -673,9 +583,38 @@ export async function StreamsABI(): Promise<Abi> {
               "type": "bytes32"
             }
           ],
-          "internalType": "struct EventSource.EventSchema[]",
+          "internalType": "struct IEventSource.EventSchema[]",
           "name": "schemas",
           "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "schemaId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "publisher",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "n",
+          "type": "uint256"
+        }
+      ],
+      "name": "getLastNPublishedDataForSchema",
+      "outputs": [
+        {
+          "internalType": "bytes[]",
+          "name": "",
+          "type": "bytes[]"
         }
       ],
       "stateMutability": "view",
@@ -814,16 +753,11 @@ export async function StreamsABI(): Promise<Abi> {
       "inputs": [
         {
           "internalType": "address",
-          "name": "wallet",
+          "name": "initialOwner",
           "type": "address"
-        },
-        {
-          "internalType": "enum RoleControl.Role",
-          "name": "role",
-          "type": "uint8"
         }
       ],
-      "name": "grantRole",
+      "name": "initialize",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -845,7 +779,7 @@ export async function StreamsABI(): Promise<Abi> {
       "outputs": [
         {
           "internalType": "bool",
-          "name": "isEmitter",
+          "name": "",
           "type": "bool"
         }
       ],
@@ -864,7 +798,7 @@ export async function StreamsABI(): Promise<Abi> {
       "outputs": [
         {
           "internalType": "bool",
-          "name": "isOpen",
+          "name": "",
           "type": "bool"
         }
       ],
@@ -965,6 +899,19 @@ export async function StreamsABI(): Promise<Abi> {
       "type": "function"
     },
     {
+      "inputs": [],
+      "name": "proxiableUUID",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
           "components": [
@@ -984,7 +931,7 @@ export async function StreamsABI(): Promise<Abi> {
               "type": "bytes"
             }
           ],
-          "internalType": "struct DataSchemaLibrary.DataStream[]",
+          "internalType": "struct IDataSchemaLibrary.DataStream[]",
           "name": "dataStreams",
           "type": "tuple[]"
         },
@@ -1006,7 +953,7 @@ export async function StreamsABI(): Promise<Abi> {
               "type": "bytes"
             }
           ],
-          "internalType": "struct EventSource.EventData[]",
+          "internalType": "struct IEventSource.EventData[]",
           "name": "events",
           "type": "tuple[]"
         }
@@ -1103,7 +1050,7 @@ export async function StreamsABI(): Promise<Abi> {
                       "type": "bool"
                     }
                   ],
-                  "internalType": "struct EventSource.Parameter[]",
+                  "internalType": "struct IEventSource.Parameter[]",
                   "name": "params",
                   "type": "tuple[]"
                 },
@@ -1113,12 +1060,12 @@ export async function StreamsABI(): Promise<Abi> {
                   "type": "bytes32"
                 }
               ],
-              "internalType": "struct EventSource.EventSchema",
+              "internalType": "struct IEventSource.EventSchema",
               "name": "schema",
               "type": "tuple"
             }
           ],
-          "internalType": "struct EventSource.EventSchemaRegistration[]",
+          "internalType": "struct IEventSource.EventSchemaRegistration[]",
           "name": "registrations",
           "type": "tuple[]"
         }
@@ -1148,7 +1095,7 @@ export async function StreamsABI(): Promise<Abi> {
               "type": "bytes32"
             }
           ],
-          "internalType": "struct DataSchemaLibrary.SchemaRegistration[]",
+          "internalType": "struct IDataSchemaLibrary.SchemaRegistration[]",
           "name": "schemaRegistrations",
           "type": "tuple[]"
         }
@@ -1161,24 +1108,6 @@ export async function StreamsABI(): Promise<Abi> {
     {
       "inputs": [],
       "name": "renounceOwnership",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "wallet",
-          "type": "address"
-        },
-        {
-          "internalType": "enum RoleControl.Role",
-          "name": "role",
-          "type": "uint8"
-        }
-      ],
-      "name": "revokeRole",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -1224,19 +1153,6 @@ export async function StreamsABI(): Promise<Abi> {
     {
       "inputs": [
         {
-          "internalType": "bool",
-          "name": "bypass",
-          "type": "bool"
-        }
-      ],
-      "name": "setBypassRoleChecks",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
           "internalType": "string",
           "name": "id",
           "type": "string"
@@ -1255,24 +1171,6 @@ export async function StreamsABI(): Promise<Abi> {
     {
       "inputs": [
         {
-          "internalType": "enum RoleControl.Role",
-          "name": "role",
-          "type": "uint8"
-        },
-        {
-          "internalType": "bool",
-          "name": "isOpen",
-          "type": "bool"
-        }
-      ],
-      "name": "setIsRoleOpen",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
           "internalType": "bytes32",
           "name": "topic",
           "type": "bytes32"
@@ -1282,7 +1180,7 @@ export async function StreamsABI(): Promise<Abi> {
       "outputs": [
         {
           "internalType": "address",
-          "name": "origin",
+          "name": "",
           "type": "address"
         }
       ],
@@ -1338,7 +1236,7 @@ export async function StreamsABI(): Promise<Abi> {
       "outputs": [
         {
           "internalType": "uint256",
-          "name": "indexedParams",
+          "name": "",
           "type": "uint256"
         }
       ],
@@ -1356,6 +1254,24 @@ export async function StreamsABI(): Promise<Abi> {
       "name": "transferOwnership",
       "outputs": [],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newImplementation",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes",
+          "name": "data",
+          "type": "bytes"
+        }
+      ],
+      "name": "upgradeToAndCall",
+      "outputs": [],
+      "stateMutability": "payable",
       "type": "function"
     }
   ] as Abi

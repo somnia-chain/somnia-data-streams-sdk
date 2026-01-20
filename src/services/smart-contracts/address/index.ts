@@ -7,14 +7,15 @@ import { Chains } from "@/services/smart-contracts/constants"
 import {
     isAddress,
     Address,
-    zeroAddress,
     getAddress,
 } from "viem"
 
 const STREAMS_LIBRARY_BY_CHAIN: ContractAddressByChain = {
-    [Chains.SomniaMainnet]: zeroAddress,
+    [Chains.SomniaMainnet]: getAddress(
+        "0x7EF39B35f80F14b2eE479248d27b5014C1C64AD0"
+    ),
     [Chains.SomniaTestnet]: getAddress(
-        "0xC1d833a80469854a7450Dd187224b2ceE5ecE264"
+        "0xB1Ae08D3d1542eF9971A63Aede2dB8d0239c78d4"
     ),
 }
 

@@ -100,4 +100,4 @@ await sdk.streams.setAndEmitEvents(dataStreams, eventStreams)
 
 ## 📚 Full Data Streams Documentation
 
-For detailed event schemas, advanced usage, and more examples, check the [Somnia Data Streams Docs](https://msquared.gitbook.io/somnia-data-streams/RhsbSIQiIPTLimeaeFSC).
+For detailed event schemas, advanced usage, and more examples, check the [Somnia Data Streams Docs](https://docs.somnia.network/developer/development-workflow/somnia-data-streams).

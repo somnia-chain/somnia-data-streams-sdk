@@ -1,21 +1,17 @@
 /**
  * Imports
  */
-import { gzipSync, gunzipSync } from 'fflate'
 import { Client, KnownContracts } from "@/types"
-import { Viem } from "@/services/viem"
 import { getContractAddressAndAbi } from "@/services/smart-contracts"
 import { maybeLogContractError } from "@/services/logs"
 import {
     Hex,
     Address,
     Abi,
-    createPublicClient,
-    webSocket,
     toEventSelector,
 } from "viem"
 import { SchemaDecodedItem, SchemaEncoder } from "./encoder"
-import { zeroBytes32, compressionConfig } from "@/constants"
+import { zeroBytes32 } from "@/constants"
 import {
     SchemaReference,
     DataStream,
@@ -23,26 +19,25 @@ import {
     EventSchema,
     SchemaID,
     DataSchemaRegistration,
-    ExtendedWebSocketTransport,
     StreamsInterface,
-    SubscriptionInitParams,
     GetSomniaDataStreamsProtocolInfoResponse,
-    WebSocketTransportSubscribeReturnType,
     EventSchemaRegistration,
 } from "@/types/streams"
 import { assertAddressIsValid } from "@/utils/validation"
+
+import {
+    SDK as Reactivity
+ } from "@somnia-chain/reactivity"
 
 /**
  * Exports
  */
 export {SchemaEncoder} from "./encoder"
 
-export class Streams implements StreamsInterface {
-    // Wrapper class on the viem web3 library providing standard ways of reading and writing to chain
-    private viem: Viem
+export class Streams extends Reactivity implements StreamsInterface {
 
     constructor(client: Client) {
-        this.viem = new Viem(client)
+        super(client)
     }
 
     /**
@@ -166,7 +161,7 @@ export class Streams implements StreamsInterface {
                 address,
                 abi!,
                 "publishDataAndEmitEvents",
-                [this.processDataStreamsForWrite(dataStreams), eventStreams]
+                [dataStreams, eventStreams]
             )
 
             if (txHash === null) {
@@ -393,15 +388,13 @@ export class Streams implements StreamsInterface {
      * @param publisher Address of the wallet or smart contract that published the data
      * @param startIndex BigInt start of the range (inclusive)
      * @param endIndex BigInt end of the range (exclusive)
-     * @param decompress Hint at whether compression was used during write
      * @returns Raw bytes array if the schema is private, decoded data array if schema is valid, or error
      */
     public async getBetweenRange(
         schemaId: SchemaID,
         publisher: Address,
         startIndex: bigint,
-        endIndex: bigint,
-        decompress?: boolean
+        endIndex: bigint
     ): Promise<Hex[] | SchemaDecodedItem[][] | Error> {
         // Ensure the publisher address is valid
         assertAddressIsValid(publisher)
@@ -442,14 +435,12 @@ export class Streams implements StreamsInterface {
      * @param schemaId Unique schema reference that can be computed from the full schema
      * @param publisher Wallet that published the data
      * @param idx Index of the data in an append only list associated with the data publisher wallet
-     * @param decompress Hint at whether compression was used during write
      * @returns Raw data as a hex string if the schema is private, deserialised data or Error if the data does not exist
      */
     public async getAtIndex(
         schemaId: SchemaID,
         publisher: Address,
-        idx: bigint,
-        decompress?: boolean
+        idx: bigint
     ): Promise<Hex[] | SchemaDecodedItem[][] | Error> {
         assertAddressIsValid(publisher)
         try {
@@ -690,7 +681,7 @@ export class Streams implements StreamsInterface {
                 address,
                 abi,
                 "esstores",
-                [this.processDataStreamsForWrite(dataStreams)]
+                [dataStreams]
             )
 
             if (txHash === null) {
@@ -740,13 +731,11 @@ export class Streams implements StreamsInterface {
      * Query Somnia Data streams for all data published by a specific wallet for a given schema
      * @param schemaId Unique schema reference to a public or private schema or the full schema
      * @param publisher Wallet that broadcast the data on-chain
-     * @param decompress Hint at whether compression was used during write
      * @returns A hex array with (raw data) for private schemas, SchemaDecodedItem 2D array for decoded data or Error
      */
     public async getAllPublisherDataForSchema(
         schemaId: SchemaID,
-        publisher: Address,
-        decompress?: boolean
+        publisher: Address
     ): Promise<Hex[] | SchemaDecodedItem[][] | Error> {
         assertAddressIsValid(publisher)
         try {
@@ -787,8 +776,7 @@ export class Streams implements StreamsInterface {
     public async getByKey(
         schemaId: SchemaID,
         publisher: Address,
-        key: Hex,
-        decompress?: boolean
+        key: Hex
     ): Promise<Hex[] | SchemaDecodedItem[][] | Error> {
         assertAddressIsValid(publisher)
         try {
@@ -818,8 +806,7 @@ export class Streams implements StreamsInterface {
             return this.getAtIndex(
                 schemaId,
                 publisher,
-                adjustedIndex,
-                decompress
+                adjustedIndex
             )
         } catch (e) {
             if (e instanceof Error) {
@@ -866,14 +853,11 @@ export class Streams implements StreamsInterface {
      * @dev this assumes that last published data is at the end of the array of all publisher data points
      * @param schemaId Unique schema identifier
      * @param publisher Address of the wallet or smart contract that wrote to chain
-     * @param decompress Hint at whether compression was used during write
-     * @param publisher Wallet address of the publisher 
      * @returns Raw data from chain if schema is not public, decoded data if it is or Error if there were errors reading data
      */
     public async getLastPublishedDataForSchema(
         schemaId: SchemaID,
-        publisher: Address,
-        decompress?: boolean
+        publisher: Address
     ): Promise<Hex[] | SchemaDecodedItem[][] | Error> {
         try {
             // Resolve the chain id
@@ -894,6 +878,46 @@ export class Streams implements StreamsInterface {
             )
 
             return this.deserialiseRawData([rawData], schemaId)
+        } catch (e) {
+            if (e instanceof Error) {
+                return e
+            } else {
+                return new Error(String(e))
+            }
+        }
+    }
+
+    /**
+     * Request that the last N data points published by a wallet for a schema are returned
+     * @param schemaId Unique schema identifier
+     * @param publisher Address of the wallet or smart contract that wrote to chain
+     * @param n The total number of recent data to return (dictates the return array size)
+     * @returns Raw data from chain if schema is not public, decoded data if it is or Error if there were errors reading data
+     */
+    public async getLastNPublishedDataForSchema(
+        schemaId: SchemaID,
+        publisher: Address,
+        n: number
+    ): Promise<Hex[] | SchemaDecodedItem[][] | Error> {
+        try {
+            // Resolve the chain id
+            const chainId = await this.viem.getChainId()
+
+            // Fetch the required contract info
+            const { address, abi } = await getContractAddressAndAbi({
+                internal: KnownContracts.STREAMS,
+                chainId
+            })
+
+            // Read the last published bytes data from chain
+            const rawData = await this.viem.readContract<Hex[]>(
+                address,
+                abi,
+                "getLastNPublishedDataForSchema",
+                [schemaId, publisher, BigInt(n)]
+            )
+
+            return this.deserialiseRawData(rawData, schemaId)
         } catch (e) {
             if (e instanceof Error) {
                 return e
@@ -935,107 +959,6 @@ export class Streams implements StreamsInterface {
     }
 
     /**
-     * Somnia streams reactivity enabling event subscriptions that bundle any ETH call data
-     * @param param0 See SubscriptionInitParams type which defines the events being observed, the eth calls executed and what callback fn to call
-     * @returns The subscription identifier and an unsubscribe callback or an Error object if the subscription fails to start
-     */
-    public async subscribe({
-        somniaStreamsEventId,
-        ethCalls,
-        context,
-        onData,
-        onError,
-        eventContractSources,
-        topicOverrides,
-        onlyPushChanges
-    }: SubscriptionInitParams): Promise<WebSocketTransportSubscribeReturnType | Error> {
-        try {
-            // Resolve the chain id
-            const chainId = await this.viem.getChainId()
-
-            // Fetch the streams contract address as the default event source
-            const { address: streamsProtocolAddress } = await getContractAddressAndAbi({
-                internal: KnownContracts.STREAMS,
-                chainId
-            })
-
-            // Ensure the transport type is websocket otherwise we cannot proceed
-            if (this.viem.client.public.transport.type !== "webSocket") {
-                throw new Error("Invalid public client config - websocket required")
-            }
-
-            // If an override for event source has been specified use it otherwise use the Streams contract address
-            let eventSources: Address[] | undefined = undefined
-            let eventTopics: Hex[] | undefined = undefined
-            if (somniaStreamsEventId) {
-                // Fetch the topic info from the streams contract by id
-                let eventSchemas: EventSchema[] = []
-                try {
-                    const getEventSchemasByIdResult = await this.getEventSchemasById([somniaStreamsEventId])
-                    if (getEventSchemasByIdResult instanceof Error) {
-                        return getEventSchemasByIdResult
-                    }
-                    eventSchemas = getEventSchemasByIdResult
-                } catch {
-                    throw new Error("Failed to get event schemas")
-                }
-
-                if (!eventSchemas) {
-                    throw new Error("Event schemas not returned")
-                }
-
-                if (eventSchemas.length < 1) {
-                    throw new Error("No event schema returned")
-                }
-
-                if (eventSchemas.length > 1) {
-                    throw new Error("Too many schemas found")
-                }
-
-                const [eventSchema] = eventSchemas
-                const { eventTopic } = eventSchema
-
-                // Push a single topic for to watch
-                eventTopics = [eventTopic as Hex]
-
-                // Push a single contract to watch
-                eventSources = [streamsProtocolAddress]
-            } else {
-                eventSources = eventContractSources
-                eventTopics = topicOverrides   
-            }
-
-            // get a public client with the correct websocket types already figured out
-            const webSocketClient = createPublicClient({
-                chain: this.viem.client.public.chain,
-                transport: webSocket(),  // Defaults to chain's WS URL
-            }) as unknown as { transport: ExtendedWebSocketTransport };
-
-            // Subscribe and return the subscription info to the caller
-            return webSocketClient.transport.subscribe({
-                params: [
-                    "somnia_watch",
-                    {
-                        address: eventSources,
-                        topics: eventTopics,
-                        eth_calls: ethCalls,
-                        context,
-                        push_changes_only: onlyPushChanges
-                    }
-                ],
-                onData,
-                onError
-            })
-        } catch (e) {
-            if (e instanceof Error) {
-                return e
-            } else {
-                return new Error(String(e))
-            }
-        }
-    }
-
-    /**
      * From raw bytes data encoded with the schema encoder, deserialise the raw data based on a given public schema
      * @param rawData The array of data that will be deserialised based on the specified schema
      * @param schemaId The bytes32 schema identifier used to lookup the schema that is needed for deserialisation
@@ -1066,8 +989,7 @@ export class Streams implements StreamsInterface {
             // Provided there is a public schema registered on-chain, we can decode the raw bytes
             const encoder = new SchemaEncoder(schemaLookup.finalSchema)
             return rawData.map((raw: Hex) => {
-                const rawDecompressed = this.decompressBytes(raw)
-                return encoder.decodeData(rawDecompressed)
+                return encoder.decodeData(raw)
             })
         } catch (e) {
             if (e instanceof Error) {
@@ -1219,71 +1141,6 @@ export class Streams implements StreamsInterface {
             finalSchema,
             schemaId
         }
-    }
-
-     /**
-      * @dev Helper to convert hex string (with or without '0x') to Uint8Array
-      * @param hex String input
-      * @returns Uint8Array
-      */
-    private hexToUint8Array(hex: `0x${string}` | string): Uint8Array {
-        // Remove '0x' prefix if present
-        if (hex.startsWith('0x')) {
-            hex = hex.slice(2)
-        }
-        
-        // Ensure even length (hex bytes)
-        if (hex.length % 2 !== 0) {
-            throw new Error('Hex string must have even length')
-        }
-        
-        const bytes = new Uint8Array(hex.length / 2);
-        for (let i = 0; i < hex.length; i += 2) {
-            bytes[i / 2] = parseInt(hex.slice(i, i + 2), 16)
-        }
-        
-        return bytes
-    }
-
-    /**
-     * @dev Helper to convert Uint8Array back to hex string with '0x' prefix
-     * @param bytes Uint8Array being converted
-     * @returns Hex encoded bytes that can be written to chain
-     */
-    private uint8ArrayToHex(bytes: Uint8Array): Hex {
-        return `0x${Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')}`
-    }
-
-    /**
-     * @dev Takes data streams and compress the raw bytes data so the write methods can persist compressed data
-     * @param streams Array of data streams
-     * @returns Array of data streams. The data in each data stream will have been compressed
-     */
-    private processDataStreamsForWrite(
-        streams: DataStream[]
-    ): DataStream[] {
-        const processedStreams: DataStream[] = []
-        for (const stream of streams) {
-            const rawBytes = this.hexToUint8Array(stream.data)
-            const compressedBytes = gzipSync(rawBytes, compressionConfig)
-            processedStreams.push({
-                id: stream.id,
-                schemaId: stream.schemaId,
-                data: this.uint8ArrayToHex(compressedBytes)
-            })
-        }
-        return processedStreams
-    }
-
-    /**
-     * @dev Generic method for decompressing bytes data that is read from contract as a hex string
-     * @param compressedHex Hex encoded bytes stream representing a compressed data stream
-     * @returns Decompressed hex bytes string for a data stream
-     */
-    public decompressBytes(compressedHex: Hex): Hex {
-        const compressedBytes = this.hexToUint8Array(compressedHex)
-        const rawBytes = gunzipSync(compressedBytes, compressionConfig)
-        return this.uint8ArrayToHex(rawBytes)
     }
 
 }

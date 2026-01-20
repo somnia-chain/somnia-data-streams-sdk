@@ -7,7 +7,17 @@ import {
 // Exports for SDK consumers
 export { zeroBytes32 } from "@/constants"
 export { SchemaEncoder } from "@/modules"
-export { SubscriptionCallback, SubscriptionInitParams } from "@/types/streams"
+export { 
+    SchemaReference,
+    DataStream,
+    EventStream,
+    EventSchema,
+    SchemaID,
+    DataSchemaRegistration,
+    StreamsInterface,
+    GetSomniaDataStreamsProtocolInfoResponse,
+    EventSchemaRegistration,
+ } from "@/types/streams"
 
 export class SDK extends Streams {
     // Public modules that can be accessed on the SDK instance
