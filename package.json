@@ -1,6 +1,6 @@
 {
   "name": "@somnia-chain/streams",
-  "version": "0.12.1",
+  "version": "0.12.2",
   "description": "A TypeScript SDK for Somnia streams with first class reactivity support",
   "type": "module",
   "main": "./dist/index.cjs",

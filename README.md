@@ -61,7 +61,6 @@ import { SDK, SubscriptionInitParams, SubscriptionCallback } from '@somnia-chain
 
 // Example params
 const initParams: SubscriptionInitParams = {
-  somniaStreamsEventId: 'your-event-id', // Or null for custom
   ethCalls: [], // Multicall3 recommended; can be empty
   context: 'data', // e.g., 'topic0', 'data', 'address'
   onData: (data: SubscriptionCallback) => console.log('Received:', data),
@@ -81,7 +80,7 @@ To emit data that triggers subscribers' `onData` callbacks:
 ```typescript
 // Pseudo-code example (see docs for full ABI/details)
 const dataStreams = [{
-    id: toHex(`44-7`, { size: 32 }), // Could be crossing the finish line etc
+    id: toHex(`44-7`, { size: 32 }),
     schemaId: driverSchemaId,
     data: encodedData
 }]
